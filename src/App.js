@@ -103,7 +103,11 @@ function App() {
             </Button>
           </div>
 
-          <TextArea rows={20} readOnly value={output} />
+          <TextArea
+            rows={20}
+            value={output}
+            onChange={(e) => setOutput(e.target.value)}
+          />
         </Col>
       </Row>
 
