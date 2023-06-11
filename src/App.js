@@ -1,6 +1,6 @@
 import { Button, Checkbox, Col, Row, Typography } from "antd";
 import TextArea from "antd/es/input/TextArea";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 const { Text } = Typography;
 
 const options = [
@@ -32,11 +32,21 @@ namespace Domain.Entities
         public Tag? Tag { get; set; }
     }
 }`;
+const spaces = 4;
 
 function App() {
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState({ value: "", caret: -1, target: null });
   const [output, setOutput] = useState("");
   const [checked, setChecked] = useState(["1", "2"]);
+
+  useEffect(() => {
+    if (input.caret >= 0) {
+      input.target.setSelectionRange(
+        input.caret + spaces,
+        input.caret + spaces
+      );
+    }
+  }, [input]);
 
   function removeAttributesAndEmptyLines(input, options) {
     const lines = input.split("\n");
@@ -57,6 +67,24 @@ function App() {
     });
 
     setOutput(filteredLines.join("\n"));
+  }
+
+  function handleTab(e) {
+    console.log(e);
+
+    let content = e.target.value;
+    let caret = e.target.selectionStart;
+
+    if (e.key === "Tab") {
+      e.preventDefault();
+
+      let newText =
+        content.substring(0, caret) +
+        " ".repeat(spaces) +
+        content.substring(caret);
+
+      setInput({ value: newText, caret: caret, target: e.target });
+    }
   }
 
   return (
@@ -81,9 +109,12 @@ function App() {
           <h2>Input</h2>
           <TextArea
             rows={20}
-            value={input}
+            value={input.value}
             placeholder={placeholder}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) =>
+              setInput({ value: e.target.value, caret: -1, target: e.target })
+            }
+            onKeyDown={handleTab}
           />
         </Col>
         <Col span={12}>
@@ -107,6 +138,7 @@ function App() {
             rows={20}
             value={output}
             onChange={(e) => setOutput(e.target.value)}
+            onKeyDown={handleTab}
           />
         </Col>
       </Row>
