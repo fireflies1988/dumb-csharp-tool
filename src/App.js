@@ -13,6 +13,25 @@ const options = [
     value: "2",
   },
 ];
+const placeholder = `Example:
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+
+namespace Domain.Entities
+{
+    public class PhotoTag
+    {
+        [JsonIgnore]
+        public int PhotoId { get; set; }
+
+        [JsonIgnore]
+        public Photo? Photo { get; set; }
+
+        public string? TagName { get; set; }
+        [JsonIgnore]
+        public Tag? Tag { get; set; }
+    }
+}`;
 
 function App() {
   const [input, setInput] = useState("");
@@ -61,8 +80,9 @@ function App() {
         <Col span={12}>
           <h2>Input</h2>
           <TextArea
-            rows={23}
+            rows={20}
             value={input}
+            placeholder={placeholder}
             onChange={(e) => setInput(e.target.value)}
           />
         </Col>
@@ -83,7 +103,7 @@ function App() {
             </Button>
           </div>
 
-          <TextArea rows={23} readOnly value={output} />
+          <TextArea rows={20} readOnly value={output} />
         </Col>
       </Row>
 
@@ -99,7 +119,12 @@ function App() {
       </div>
 
       <footer
-        style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          marginTop: "1rem",
+          marginBottom: "1rem",
+        }}
       >
         <Text type="secondary">©️ 2023 Kieu Huynh Thanh Tung</Text>
       </footer>
