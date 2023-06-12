@@ -49,7 +49,7 @@ function App() {
   }, [input]);
 
   function removeAttributesAndEmptyLines(input, options) {
-    const lines = input.split("\n");
+    const lines = input.value.split("\n");
 
     const filteredLines = lines.filter((line) => {
       let hasAttribute = false;
