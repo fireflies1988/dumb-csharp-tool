@@ -1,20 +1,27 @@
 import { Button, Checkbox, Col, Row, Typography } from "antd";
 import TextArea from "antd/es/input/TextArea";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 const { Text } = Typography;
 
 const options = [
   {
-    label: "Attributes",
+    label: "Remove Attributes",
     value: "1",
   },
   {
-    label: "Empty Lines",
+    label: "Remove Constructors and Methods",
     value: "2",
   },
+  {
+    label: "Remove Empty Lines",
+    value: "3",
+  },
+  {
+    label: "Format Code",
+    value: "4",
+  }
 ];
-const placeholder = `Example:
-using System.Text.Json.Serialization;
+const inputPlaceHolder = `using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Domain.Entities
@@ -32,58 +39,96 @@ namespace Domain.Entities
         public Tag? Tag { get; set; }
     }
 }`;
-const spaces = 4;
+const outputPlaceHolder = `using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+namespace Domain.Entities
+{
+    public class PhotoTag
+    {
+        public int PhotoId { get; set; }
+        public Photo? Photo { get; set; }
+        public string? TagName { get; set; }
+        public Tag? Tag { get; set; }
+    }
+}`;
 
 function App() {
-  const [input, setInput] = useState({ value: "", caret: -1, target: null });
+  const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [checked, setChecked] = useState(["1", "2"]);
+  const [checked, setChecked] = useState(["1", "2", "3", "4"]);
 
-  useEffect(() => {
-    if (input.caret >= 0) {
-      input.target.setSelectionRange(
-        input.caret + spaces,
-        input.caret + spaces
-      );
+  function handleConvertClick(input, options) {
+    let output = input;
+
+    // Remove attributes (e.g., [JsonIgnore])
+    if (options.includes("1")) {
+      output = input.replace(/[ \t]*\[[^\]]+\]\s*/g, "");
     }
-  }, [input]);
 
-  function removeAttributesAndEmptyLines(input, options) {
-    const lines = input.value.split("\n");
+    // Remove constructors and functions
+    if (options.includes("2"))
+      output = output.replace(
+        /(public|private|protected|internal|static)?\s+\w+\s+\w+\s*\([^)]*\)\s*{[^}]*}/g,
+        ""
+      );
 
-    const filteredLines = lines.filter((line) => {
-      let hasAttribute = false;
-      let isEmpty = false;
+    // Remove empty lines
+    if (options.includes("3")) {
+      output = output.replace(/^\s*[\r\n]/gm, "");
+    }
 
-      if (options.includes("1")) {
-        hasAttribute = line.includes("[") && line.includes("]");
-      }
+    if (options.includes("4") && output.trim()) {
+      output = formatCode(output);
+    }
 
-      if (options.includes("2")) {
-        isEmpty = line.trim() === "";
-      }
-
-      return !hasAttribute && !isEmpty;
-    });
-
-    setOutput(filteredLines.join("\n"));
+    setOutput(output);
   }
 
-  function handleTab(e) {
-    console.log(e);
+  function formatCode(input) {
+    let output = "";
+    let indentLevel = 0;
+    const indentSize = 4; // You can adjust the indentation size as needed
 
-    let content = e.target.value;
-    let caret = e.target.selectionStart;
+    // Split the input into lines
+    const lines = input.split("\n");
 
+    // Iterate through each line
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+
+      // Decrease the indent level for closing braces
+      if (trimmedLine === "}") {
+        indentLevel--;
+      }
+
+      // Add the current line with proper indentation
+      output += " ".repeat(indentLevel * indentSize);
+      output += line.trim() + "\n";
+
+      // Increase the indent level for opening braces
+      if (trimmedLine.endsWith("{")) {
+        indentLevel++;
+      }
+    }
+
+    return output;
+  }
+
+  function handleTabKeyPress(e, setState) {
     if (e.key === "Tab") {
       e.preventDefault();
 
+      // Insert a tab character ('\t') at the current cursor position
+      const { selectionStart, selectionEnd } = e.target;
       let newText =
-        content.substring(0, caret) +
-        " ".repeat(spaces) +
-        content.substring(caret);
+        e.target.value.substring(0, selectionStart) +
+        "\t" +
+        e.target.value.substring(selectionEnd);
 
-      setInput({ value: newText, caret: caret, target: e.target });
+      setState(newText);
+
+      // Move the cursor after the inserted tab
+      e.target.selectionStart = e.target.selectionEnd = selectionStart + 1;
     }
   }
 
@@ -96,7 +141,7 @@ function App() {
         paddingRight: "1rem",
       }}
     >
-      <h2>Remove attributes and empty lines from a C# class</h2>
+      <h2>Format a C# class</h2>
 
       <Checkbox.Group
         options={options}
@@ -109,12 +154,10 @@ function App() {
           <h2>Input</h2>
           <TextArea
             rows={20}
-            value={input.value}
-            placeholder={placeholder}
-            onChange={(e) =>
-              setInput({ value: e.target.value, caret: -1, target: e.target })
-            }
-            onKeyDown={handleTab}
+            value={input}
+            placeholder={inputPlaceHolder}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => handleTabKeyPress(e, setInput)}
           />
         </Col>
         <Col span={12}>
@@ -137,8 +180,9 @@ function App() {
           <TextArea
             rows={20}
             value={output}
+            placeholder={outputPlaceHolder}
             onChange={(e) => setOutput(e.target.value)}
-            onKeyDown={handleTab}
+            onKeyDown={(e) => handleTabKeyPress(e, setOutput)}
           />
         </Col>
       </Row>
@@ -146,10 +190,7 @@ function App() {
       <div
         style={{ display: "flex", marginTop: "1rem", justifyContent: "center" }}
       >
-        <Button
-          type="primary"
-          onClick={() => removeAttributesAndEmptyLines(input, checked)}
-        >
+        <Button type="primary" onClick={() => handleConvertClick(input, checked)}>
           Convert
         </Button>
       </div>
