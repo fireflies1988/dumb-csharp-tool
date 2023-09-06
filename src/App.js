@@ -13,12 +13,16 @@ const options = [
     value: "2",
   },
   {
-    label: "Remove Empty Lines",
+    label: "Remove Region Directives",
     value: "3",
   },
   {
-    label: "Format Code",
+    label: "Remove Empty Lines",
     value: "4",
+  },
+  {
+    label: "Format Code",
+    value: "5",
   }
 ];
 const inputPlaceHolder = `using System.Text.Json.Serialization;
@@ -55,7 +59,7 @@ namespace Domain.Entities
 function App() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [checked, setChecked] = useState(["1", "2", "3", "4"]);
+  const [checked, setChecked] = useState(["1", "2", "3", "4", "5"]);
 
   function handleConvertClick(input, options) {
     let output = input;
@@ -68,16 +72,21 @@ function App() {
     // Remove constructors and functions
     if (options.includes("2"))
       output = output.replace(
-        /(public|private|protected|internal|static)?\s+\w+\s+\w+\s*\([^)]*\)\s*{[^}]*}/g,
+        /(public|private|protected|internal|static)?\s+\w+\s+\w+\s*\([^)]*\)\s*{([^{}]*{[^{}]*}[^{}]*|[^{}])*}/g,
         ""
       );
 
-    // Remove empty lines
+    // Remove region directives
     if (options.includes("3")) {
+      output = output.replace(/[ \t]*#(region|endregion).*/g, "")
+    }
+
+    // Remove empty lines
+    if (options.includes("4")) {
       output = output.replace(/^\s*[\r\n]/gm, "");
     }
 
-    if (options.includes("4") && output.trim()) {
+    if (options.includes("5") && output.trim()) {
       output = formatCode(output);
     }
 
@@ -102,7 +111,9 @@ function App() {
       }
 
       // Add the current line with proper indentation
-      output += " ".repeat(indentLevel * indentSize);
+      if (indentLevel > 0) {
+        output += " ".repeat(indentLevel * indentSize);
+      }
       output += line.trim() + "\n";
 
       // Increase the indent level for opening braces
